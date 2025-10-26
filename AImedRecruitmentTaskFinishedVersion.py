@@ -9,7 +9,7 @@ from sklearn.metrics import roc_auc_score
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, precision_recall_curve
 
-df = pd.read_csv(r'C:\Users\lukem\Desktop\IBM sem3\task_data.csv')  # path to file
+df = pd.read_csv(\"task_data.csv\')  # path to file
 
 # Pre-processing and data cleaning
 df.columns = df.columns.str.strip()
@@ -107,6 +107,7 @@ plt.ylabel('Precision')
 plt.title('Precision–Recall curve')
 plt.legend()
 plt.show()
+
 
 
 

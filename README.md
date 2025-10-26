@@ -1,108 +1,102 @@
-# Recruitment Task – Classification of a Heart with Hypertrophic Cardiomyopathy (Cardiomegaly)
+# Classification of a Heart with Hypertrophic Cardiomyopathy
+This project was created as part of a recruitment task for the AI ​​med scientific group at AGH University, the data and idea are not my property.
 
-## Task Description
+Brief description:
+Etapy działania programu:
 
-Your task is to prepare a solution for the **classification problem** of detecting **hypertrophic cardiomyopathy (cardiomegaly)** based on the provided features.  
-You should use one of the **classical machine learning methods** described in the [ML.md](ML.md) file.  
+1. Wczytanie danych
 
-The goal is to build a model capable of correctly distinguishing between a **healthy heart** and a **diseased heart** using the available data.
+Program wczytuje dane z pliku task_data.csv przy użyciu biblioteki pandas.
 
-The repository contains a dataset stored in a **CSV** file, which includes selected geometric and imaging features used as the basis for further analysis.  
-We expect the candidate to prepare code that:
+Można sprawdzić nazwy kolumn - pierwsze kolumny to ID (numer zdjęcia, którego nie używamy w tej analizie) oraz Cardiomegaly - etykieta klasy: 0 (zdrowe serce) lub     1 (kardiomegalia). Pozostałe kolumny to różne pomiary z wartościami liczbowymi serca i płuc.
 
-1. Loads the data from the `task_data.csv` file.  
-2. Splits the data into training and test sets.  
-3. Performs preprocessing (e.g., standardization, normalization, etc.).  
-4. Trains one or more selected models.  
-5. Evaluates the solution using [cross-validation](https://www.geeksforgeeks.org/machine-learning/cross-validation-using-k-fold-with-scikit-learn/).  
-6. Evaluates the solution on the test dataset (e.g., using accuracy, precision, recall, F1-score).  
-7. Provides a brief description of the chosen approach.
+2. Czyszczenie i przygotowanie danych (Data Cleaning & Preprocessing)
 
----
+Ponieważ dane zawierały wartości z przecinkami zamiast kropek, trzeba było:
+	
+	•	usunąć spacje z nazw kolumn (df.columns.str.strip()),
+	
+	•	zamienić przecinki na kropki i przekonwertować tekst na liczby (float),
+	
+	•	sprawdzić typy danych, aby wszystkie cechy były liczbowe.
 
-## Data (CSV)
+3. Podział danych
 
-The first column contains a **photo ID**, and the second column indicates whether the heart was diagnosed with cardiomegaly:  
-- `1` – positive diagnosis (diseased heart)  
-- `0` – negative diagnosis (healthy heart)  
+Dane zostały podzielone na:
+	
+	•	zbiór treningowy (80%) - do nauki modelu,
+	
+	•	zbiór testowy (20%) - do sprawdzenia jego skuteczności.
 
-Below are the features describing the heart and lungs. Each feature includes its name (as used in the CSV file).
+Użyto random_state=42 dla powtarzalności wyniku.
 
----
+4. Standaryzacja (normalizacja danych)
 
-### Lung width
+Cechy zostały wystandaryzowane przy użyciu StandardScaler(), przelicza wartości tak, by miały średnią = 0 i odchylenie standardowe = 1. Dzięki temu wszystkie cechy mają podobny zakres co jest ważne dla modeli takich jak regresja logistyczna. Bez tego model mógłby faworyzować duże wartości liczbowe.
 
-The horizontal distance between the outermost points of the lungs.
+5. Trenowanie modeli
 
-### Heart width
+Wybór modeli:
 
-The maximum horizontal width of the heart.
+Wybrano modele, które są szybkie i dobrze działają przy małych zbiorach danych, takich jak tutaj. Drzewo decyzyjne jest łatwe do interpretacji, nie wymaga liniowych zależności ani wcześniejszego skalowania danych, a regresja logistyczna jest stabilnym modelem oraz dobrze radzi sobie w klasyfikacji binarnej (0, 1). 
 
-### CR ratio
+Wybranie tych modeli pozwoliło na porównanie prostego, interpretowalnego modelu (drzewo) z bardziej statystycznym, probabilistycznym podejściem (regresja).
 
-The ratio of heart width to lung width.
+Komentarz do użycia klasyfikatorów:
 
-### Inertia tensors
+Drzewo decyzyjne (Decision Tree) - polega na podejmowaniu decyzji poprzez kolejne pytania o wartość danej cechy. Użyty w programie parametr max_depth=3 ogranicza głębokość drzewa, co zapobiega przeuczeniu.
 
-Metrics describing the distribution of heart and lung pixels relative to the coordinate axes, capturing the shape and orientation of the objects.  
-The `.csv` file contains four components of this feature:
+Regresja logistyczna (Logistic Regression) - estymuje prawdopodobieństwo, że pacjent jest chory.
 
-* `xx` – distribution of pixels relative to the y-axis (elongation along x)  
-* `yy` – distribution of pixels relative to the x-axis (elongation along y)  
-* `xy` – distribution relative to both x and y axes (a high value indicates object rotation)  
-* `normalized_diff` – a scalar value derived from the vector whose components are described above  
+6. Ewaluacja modeli
 
-### Inscribed circle radius
+Accuracy (dokładność) - w obu modelach wyniosło tyle samo, co oznacza, że model poprawnie sklasyfikował 75% przypadków (6 z 8 obserwacji).
 
-The radius of the largest circle that can be inscribed within the heart area, describing its symmetry and compactness.
+Macierz pomyłek (confusion matrix)
 
-### Polygon area ratio
+Oznacza:
 
-The ratio of the area of the polygon enclosing the heart contour to the actual heart area.
+	•	1 zdrowy pacjent poprawnie rozpoznany jako zdrowy (True Negative),
+	
+	•	1 zdrowy błędnie oznaczony jako chory (False Positive),
+	
+	•	1 chory błędnie oznaczony jako zdrowy (False Negative),
+	
+	•	5 chorych poprawnie rozpoznanych (True Positive).
 
-### Heart perimeter
+Oznacza to, że model dobrze wykrywa przypadki choroby, ale czasami myli zdrowych pacjentów. 
 
-The length of the heart contour.
+W medycynie najniebezpieczniejszym błędem jest False Negative, kiedy chory pacjent zostanie zdiagnozowany jako zdrowy. Może to prowadzić do poważnych konsekwencji więc w analizie danych medycznych pożądane jest użycie metod, które w jak największym stopniu eliminują udział tego błędu. 
 
-### Heart area
+Precision, Recall, F1-score
 
-The area occupied by the heart.
+Z raportu klasyfikacji:
 
-### Lung area
+	•	Precision (precyzja) - ile przypadków uznanych za chore naprawdę było chorych, czyli 0.83 = 83% pozytywnych prognoz było trafnych,
+	
+	•	Recall (czułość) - ile chorych pacjentów udało się poprawnie wykryć, czyli wykryto 83% faktycznie chorych,
+	
+	•	F1-score - średnia harmoniczna Precision i Recall, czyli 0.83 oznacza dobrą równowagę między wykrywaniem a dokładnością.
 
-The area occupied by the lungs.
+7. Walidacja krzyżowa (Cross-validation)
 
----
+Zastosowano 5-krotną walidację krzyżową dla regresji logistycznej, co wskazuje na to, że model działa stabilnie i wyniki nie są przypadkowe - skuteczność waha się od 66% do 100% w zależności od podziału danych.
 
-## Expectations
+8. AUC (Area Under ROC Curve)
 
-* The code should be written in **Python** (e.g., using libraries such as `scikit-learn`, `numpy`, `pandas`, `matplotlib`).  
-* Include a short description of the solution in a **Markdown** (`.md`) file.  
-* Present evaluation results clearly (e.g., results table, ROC/PR curves).  
-* Code and commit messages should be written in **English**.  
-  The Markdown description may be written in either **Polish** or **English**.  
+AUC (Area Under the Curve) mierzy zdolność modelu do rozróżniania klas. Im wyższy AUC, tym model lepiej oddziela pacjentów chorych od zdrowych. AUC = 1.0 oznacza idealny model, AUC = 0.5 - losowy. Oznacza to, że regresja logistyczna lepiej odróżnia chorych od zdrowych.
 
-To complete the task, please [Fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo) this repository and submit the link to your fork **in your recruitment form**.
+9. Wykresy ROC i Precision–Recall
 
-We recommend using **Jupyter Notebooks** for the implementation.
+Krzywa ROC (Receiver Operating Characteristic)
 
----
+Tutaj regresja logistyczna ma wyraźnie większe pole pod krzywą (AUC = 0.83), więc jest dokładniejsza.
 
-## Example model
+Krzywa Precision–Recall
 
-In the [Example](Example/) folder, you will find a fully implemented machine learning project that demonstrates the entire workflow — from data loading and preprocessing to model training, evaluation, and final conclusions.
-This example is designed to help beginner machine learning enthusiasts understand the structure of a complete project. It contains all the necessary information and practical guidance needed to successfully complete the recruitment task.
+Jest szczególnie przydatna, gdy dane są niezbalansowane, ponieważ skupia się na klasie pozytywnej (czyli chorzy pacjenci). Oba modele mają wysokie wartości obu miar (0.75–1.0). Regresja logistyczna utrzymuje lepszą stabilność precision przy różnych progach (linia wyżej). Oba modele są skuteczne, ale regresja logistyczna jest bardziej zrównoważona i pewniejsza w decyzjach.
 
----
+10. Wniosek końcowy:
 
-## Evaluation Criteria
+Oba modele osiągają podobną dokładność, ale regresja logistyczna ma wyższy AUC i lepiej rozróżnia klasy.Oznacza to, że przy nowych danych to właśnie regresja logistyczna byłaby lepszym wyborem jako model predykcyjny.
 
-* Correctness of the code.  
-* Clarity and readability of the implementation.  
-* Use of classical machine learning methods.  
-* Creativity of the solution.  
-* **Commit history in the repository** – clarity and consistency will also be evaluated.
-
----
-
-**Good luck!**
